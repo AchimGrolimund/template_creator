@@ -1,5 +1,4 @@
-The MIT License (MIT)
-
+/*
 Copyright © 2024 Achim Grolimund
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -19,3 +18,34 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+*/
+package main
+
+import (
+	"github.com/AchimGrolimund/template_creator/cmd"
+	"github.com/AchimGrolimund/template_creator/internal/logger"
+	"go.uber.org/zap"
+	"runtime"
+)
+
+func main() {
+	log, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
+	log.Info("Starting the application")
+	// Überprüft, ob das aktuelle Log-Level auf Debug oder niedriger eingestellt ist.
+	// Dies ist nützlich, wenn die Erstellung der Debug-Nachricht selbst rechenintensiv ist oder Nebeneffekte hat.
+	// In solchen Fällen möchten Sie möglicherweise vermeiden, die Nachricht zu erstellen, wenn sie nicht geloggt wird.
+	if log.Core().Enabled(zap.DebugLevel) {
+		var mem runtime.MemStats
+		runtime.ReadMemStats(&mem)
+		log.Debug("Debug logging enabled",
+			zap.Int("GOMAXPROCS", runtime.GOMAXPROCS(0)),
+			zap.Int("NumGoroutine", runtime.NumGoroutine()),
+			zap.Int("NumCPU", runtime.NumCPU()),
+			zap.Uint64("HeapAlloc", mem.HeapAlloc),
+		)
+	}
+	cmd.Execute()
+}
