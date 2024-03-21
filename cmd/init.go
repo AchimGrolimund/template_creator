@@ -48,7 +48,7 @@ to quickly create a Cobra application.`,
 		fmt.Printf("Service: %s\n", _service)
 
 		// Call the CreateTemplate function
-		err := template.CreateTemplate(_namespace, _type, _service)
+		err := template.CreateGitOpsTemplate(_namespace, _type, _service)
 		if err != nil {
 			fmt.Printf("Failed to create template: %s\n", err)
 		}

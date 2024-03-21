@@ -40,14 +40,14 @@ import (
 
 var imagestreamTemplate string
 
-/* CreateTemplate is a function that creates a new template based on the provided namespace, type, and service.
+/* CreateGitOpsTemplate is a function that creates a new template based on the provided namespace, type, and service.
 * It first checks if the namespace ends with "-prod" to set the environment.
 * Then, it creates a directory structure based on the namespace, type, environment, and stage.
 * It also creates a patches directory and a resources directory within the base directory.
 * After that, it parses the imagestream template and creates a new file in the resources directory.
 * Finally, it executes the template with the provided service and namespace and writes the output to the file.
  */
-func CreateTemplate(namespace, _type, service string) error {
+func CreateGitOpsTemplate(namespace, _type, service string) error {
 	// Initialize a new logger
 	log, err := logger.NewLogger()
 	if err != nil {
