@@ -24,6 +24,8 @@ package template
 import (
 	_ "embed"
 	"fmt"
+	"github.com/AchimGrolimund/template_creator/internal/logger"
+	"go.uber.org/zap"
 	"os"
 	"strings"
 	"text/template"
@@ -33,6 +35,10 @@ import (
 var imagestreamTemplate string
 
 func CreateTemplate(namespace, _type, service string) error {
+	log, err := logger.NewLogger()
+	if err != nil {
+		panic(err)
+	}
 	// Check if namespace ends with -prod
 	var env string
 	if strings.HasSuffix(namespace, "-prod") {
@@ -40,6 +46,12 @@ func CreateTemplate(namespace, _type, service string) error {
 	} else {
 		env = "nonprod"
 	}
+
+	// Log with fields
+	log.Info("Setting environment",
+		zap.String("environment", env),
+		zap.String("namespace", namespace),
+	)
 
 	// Create directory structure
 	lastIndex := strings.LastIndex(namespace, "-")
@@ -49,30 +61,45 @@ func CreateTemplate(namespace, _type, service string) error {
 		namespaceWithoutSuffix = namespace[:lastIndex]
 		stage = namespace[lastIndex+1:]
 	}
+
+	// Log with fields
+	log.Info("Creating directory structure",
+		zap.String("namespaceWithoutSuffix", namespaceWithoutSuffix),
+		zap.String("stage", stage),
+	)
 	baseDir := fmt.Sprintf("./%s-%s-%s/%s", _type, namespaceWithoutSuffix, env, stage)
-	// fmt.Printf("Creating directory: %s\n", baseDir)
 
-	err := os.MkdirAll(fmt.Sprintf("%s/patches", baseDir), os.ModePerm)
+	patchesDir := fmt.Sprintf("%s/patches", baseDir)
+	err = os.MkdirAll(patchesDir, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		log.Error("Failed to create patches directory", zap.Error(err))
+		return nil
 	}
+	log.Info("Created patches directory", zap.String("directory", patchesDir))
 
-	err = os.MkdirAll(fmt.Sprintf("%s/resources", baseDir), os.ModePerm)
+	resourceesDir := fmt.Sprintf("%s/resources", baseDir)
+	err = os.MkdirAll(resourceesDir, os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		log.Error("Failed to create resources directory", zap.Error(err))
+		return nil
 	}
+	log.Info("Created resources directory", zap.String("directory", resourceesDir))
 
 	// Render the imagestream template
 	tmpl, err := template.New("imagestream").Parse(imagestreamTemplate)
 	if err != nil {
-		return fmt.Errorf("failed to parse template: %w", err)
+		log.Error("Failed to parse template", zap.Error(err))
+		return nil
 	}
+	log.Info("Successfully parsed the imagestream template")
 
 	imagestreamFile := fmt.Sprintf("%s/resources/imagestream_%s.yaml", baseDir, service)
 	f, err := os.Create(imagestreamFile)
 	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
+		log.Error("Failed to create file", zap.Error(err))
+		return nil
 	}
+	log.Info("Created imagestream file", zap.String("file", imagestreamFile))
 	defer f.Close()
 
 	data := map[string]string{
@@ -81,8 +108,10 @@ func CreateTemplate(namespace, _type, service string) error {
 	}
 	err = tmpl.Execute(f, data)
 	if err != nil {
-		return fmt.Errorf("failed to execute template: %w", err)
+		log.Error("Failed to execute template", zap.Error(err))
+		return nil
 	}
+	log.Info("Executed template with data", zap.Any("data", data))
 
 	return nil
 }
